@@ -19,9 +19,9 @@ return new class extends Migration
             $table->string('mobile');
             $table->string('country_code');
             $table->text('address');
-            $table->enum('gender', ['male', 'female', 'other']);
-            $table->json('hobbies');
-            $table->string('photo_path')->nullable();
+            $table->string('gender');
+            $table->string('hobby')->nullable();
+            $table->string('photo')->nullable();
             $table->timestamps();
         });
     }

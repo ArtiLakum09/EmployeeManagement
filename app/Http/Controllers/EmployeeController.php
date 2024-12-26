@@ -4,7 +4,6 @@ namespace App\Http\Controllers;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use App\Models\Employee;
 
 class EmployeeController extends Controller
@@ -17,7 +16,8 @@ class EmployeeController extends Controller
 
     public function create()
     {
-        return view('employees.create');
+        $employee = new Employee(); // Empty Employee instance
+        return view('employees.create', compact('employee'));
     }
 
     public function store(Request $request)
@@ -25,35 +25,36 @@ class EmployeeController extends Controller
         $validated = $request->validate([
             'first_name' => 'required',
             'last_name' => 'required',
-            'email' => 'required|email|unique:employees,email',
+            'email' => 'required|email|unique:employees',
             'mobile' => 'required',
             'country_code' => 'required',
             'address' => 'required',
             'gender' => 'required',
-            'hobbies' => 'array',
-            'photo' => 'image|nullable',
+            'photo' => 'nullable|image',
+            'hobby' => 'nullable|array',
+            'hobby.*' => 'nullable|string',
+            
         ]);
 
         if ($request->hasFile('photo')) {
-            $validated['photo_path'] = $request->file('photo')->store('photos', 'public');
+            $photoPath = $request->file('photo')->store('photos', 'public');
+            $validated['photo'] = $photoPath;
         }
-
-        $validated['hobbies'] = json_encode($validated['hobbies']);
+        if ($request->has('hobby')) {
+            $validated['hobby'] = implode(',', $request->input('hobby')); // Join hobbies into a string
+        }
 
         Employee::create($validated);
 
-        return redirect()->route('employees.index')->with('success', 'Employee added successfully');
+        return redirect()->route('employees.index')->with('success', 'Employee added successfully!');
     }
-
     public function show(Employee $employee)
-    {
-       
-        return view('employees.show', compact('employee'));
-    }
+{
+    return view('employees.show', compact('employee'));
+}
 
     public function edit(Employee $employee)
     {
-     
         return view('employees.edit', compact('employee'));
     }
 
@@ -67,32 +68,26 @@ class EmployeeController extends Controller
             'country_code' => 'required',
             'address' => 'required',
             'gender' => 'required',
-            'hobbies' => 'array',
-            'photo' => 'image|nullable',
+            'photo' => 'nullable|image',
+            'hobby' => 'nullable|array',
+            'hobby.*' => 'nullable|string',
         ]);
 
         if ($request->hasFile('photo')) {
-            if ($employee->photo_path) {
-                Storage::disk('public')->delete($employee->photo_path);
-            }
-            $validated['photo_path'] = $request->file('photo')->store('photos', 'public');
+            $photoPath = $request->file('photo')->store('photos', 'public');
+            $validated['photo'] = $photoPath;
         }
-
-        $validated['hobbies'] = json_encode($validated['hobbies']);
-
+        if ($request->has('hobby')) {
+            $validated['hobby'] = implode(',', $request->input('hobby')); // Join hobbies into a string
+        }
         $employee->update($validated);
 
-        return redirect()->route('employees.index')->with('success', 'Employee updated successfully');
+        return redirect()->route('employees.index')->with('success', 'Employee updated successfully!');
     }
 
     public function destroy(Employee $employee)
     {
-        if ($employee->photo_path) {
-            Storage::disk('public')->delete($employee->photo_path);
-        }
-
         $employee->delete();
-
-        return redirect()->route('employees.index')->with('success', 'Employee deleted successfully');
+        return redirect()->route('employees.index')->with('success', 'Employee deleted successfully!');
     }
 }
